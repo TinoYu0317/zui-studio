@@ -40,6 +40,7 @@ export interface ZVisionNode {
   id: string;
   type: string;
   position: { x: number; y: number };
+  size: { width: number; height: number };
   data: Record<string, any>;
 }
 

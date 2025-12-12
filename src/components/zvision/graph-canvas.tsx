@@ -142,6 +142,7 @@ export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
                   stroke={isSelected ? "hsl(var(--ring))" : "hsl(var(--primary) / 0.5)"}
                   strokeWidth={isSelected ? "3" : "2"}
                   fill="none"
+                  markerEnd="url(#arrow)"
                 />
                 <path
                   d={path}

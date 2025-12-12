@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Code, Settings, Workflow, Link } from 'lucide-react';
+import { Code, Settings, Workflow, Link, Ruler } from 'lucide-react';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent, ZVisionNodeProperty } from '@/lib/zvision/types';
 
+type ViewMode = 'designer' | 'developer';
+
 interface InspectorPanelProps {
+  mode: ViewMode;
   node?: ZVisionNode;
   edge?: ZVisionEdge;
   component?: ZVisionComponent;
+  onUpdateNode?: (nodeId: string, data: Partial<ZVisionNode>) => void;
   onUpdateEdge?: (edgeId: string, newMapping: Partial<ZVisionEdge>) => void;
 }
 
@@ -27,17 +31,59 @@ const PropertyItem = ({ prop, value }: { prop: ZVisionNodeProperty; value: any }
   </div>
 );
 
+const DesignerInspector = ({ node, onUpdateNode }: { node: ZVisionNode, onUpdateNode?: InspectorPanelProps['onUpdateNode']}) => {
+  const [position, setPosition] = useState(node.position);
+  const [size, setSize] = useState(node.size);
 
-const NodeInspector = ({ node, component }: { node: ZVisionNode; component: ZVisionComponent; }) => (
+  useEffect(() => {
+    const handler = setTimeout(() => {
+        if(JSON.stringify(node.position) !== JSON.stringify(position)) {
+            onUpdateNode?.(node.id, { position });
+        }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [position, node.id, onUpdateNode, node.position]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+        if(JSON.stringify(node.size) !== JSON.stringify(size)) {
+            onUpdateNode?.(node.id, { size });
+        }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [size, node.id, onUpdateNode, node.size]);
+
+
+  return (
+    <div className="grid gap-4">
+        <h3 className="font-semibold">Transform</h3>
+        <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-1">
+                <Label htmlFor="pos-x">X</Label>
+                <Input id="pos-x" type="number" value={Math.round(position.x)} onChange={e => setPosition(p => ({...p, x: e.target.valueAsNumber}))} />
+            </div>
+            <div className="grid gap-1">
+                <Label htmlFor="pos-y">Y</Label>
+                <Input id="pos-y" type="number" value={Math.round(position.y)} onChange={e => setPosition(p => ({...p, y: e.target.valueAsNumber}))} />
+            </div>
+        </div>
+         <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-1">
+                <Label htmlFor="size-w">W</Label>
+                <Input id="size-w" type="number" value={Math.round(size.width)} onChange={e => setSize(s => ({...s, width: e.target.valueAsNumber}))} />
+            </div>
+            <div className="grid gap-1">
+                <Label htmlFor="size-h">H</Label>
+                <Input id="size-h" type="number" value={Math.round(size.height)} onChange={e => setSize(s => ({...s, height: e.target.valueAsNumber}))} />
+            </div>
+        </div>
+    </div>
+  );
+};
+
+
+const DeveloperNodeInspector = ({ node, component }: { node: ZVisionNode; component: ZVisionComponent; }) => (
   <>
-    <CardHeader className="p-0">
-      <CardTitle className="flex items-center gap-2">
-        <component.icon className="h-6 w-6 text-primary" />
-        {component.name}
-      </CardTitle>
-      <CardDescription>{node.type} (ID: {node.id})</CardDescription>
-    </CardHeader>
-  
     <Tabs defaultValue="props" className="mt-4">
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="props"><Settings className="mr-1 h-4 w-4" />Props</TabsTrigger>
@@ -129,7 +175,7 @@ const EdgeInspector = ({ edge, onUpdateEdge }: { edge: ZVisionEdge; onUpdateEdge
   );
 }
 
-export function InspectorPanel({ node, edge, component, onUpdateEdge }: InspectorPanelProps) {
+export function InspectorPanel({ mode, node, edge, component, onUpdateNode, onUpdateEdge }: InspectorPanelProps) {
     const hasSelection = node || edge;
 
     return (
@@ -146,8 +192,21 @@ export function InspectorPanel({ node, edge, component, onUpdateEdge }: Inspecto
                 </div>
             ) : (
                 <>
-                {node && component && <NodeInspector node={node} component={component} />}
-                {edge && <EdgeInspector edge={edge} onUpdateEdge={onUpdateEdge} />}
+                {node && component && (
+                    <>
+                        <CardHeader className="p-0">
+                            <CardTitle className="flex items-center gap-2">
+                                <component.icon className="h-5 w-5 text-primary" />
+                                {component.name}
+                            </CardTitle>
+                            <CardDescription>{node.type} (ID: {node.id})</CardDescription>
+                        </CardHeader>
+                        <Separator className="my-4" />
+                        {mode === 'designer' && <DesignerInspector node={node} onUpdateNode={onUpdateNode} />}
+                        {mode === 'developer' && <DeveloperNodeInspector node={node} component={component} />}
+                    </>
+                )}
+                {edge && mode === 'developer' && <EdgeInspector edge={edge} onUpdateEdge={onUpdateEdge} />}
                 </>
             )}
             </div>

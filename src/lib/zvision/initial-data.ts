@@ -1,5 +1,5 @@
 import type { ZVisionComponent, ZVisionNode, ZVisionEdge } from './types';
-import { LogIn, GitFork, Clock, StickyNote, Calendar, Box, Package, Upload } from 'lucide-react';
+import { LogIn, GitFork, Clock, StickyNote, Calendar, Box } from 'lucide-react';
 
 export const components: ZVisionComponent[] = [
   {
@@ -95,14 +95,14 @@ export const components: ZVisionComponent[] = [
 ];
 
 export const initialNodes: ZVisionNode[] = [
-  { id: '1', type: 'InputDoor', position: { x: 50, y: 150 }, data: { label: 'User Query' } },
-  { id: '2', type: 'Router', position: { x: 350, y: 150 }, data: { routes: { "note": "toNotes", "time": "toToday" } } },
-  { id: '3', type: 'NotesFrame', position: { x: 650, y: 50 }, data: { title: 'AI Generated Note' } },
-  { id: '4', type: 'TodayFrame', position: { x: 650, y: 250 }, data: {} },
+  { id: '1', type: 'InputDoor', position: { x: 50, y: 150 }, size: { width: 300, height: 60 }, data: { label: 'User Query' } },
+  { id: '2', type: 'Router', position: { x: 350, y: 150 }, size: { width: 200, height: 160 }, data: { routes: { "note": "toNotes", "time": "toToday" } } },
+  { id: '3', type: 'NotesFrame', position: { x: 50, y: 220 }, size: { width: 300, height: 200 }, data: { title: 'AI Generated Note' } },
+  { id: '4', type: 'TodayFrame', position: { x: 650, y: 250 }, size: { width: 200, height: 100 }, data: {} },
 ];
 
 export const initialEdges: ZVisionEdge[] = [
   { id: 'e1-2', source: '1', sourceHandle: 'onSend', target: '2', targetHandle: 'route', mapping: {} },
-  { id: 'e1-3', source: '2', sourceHandle: 'toNotes', target: '3', targetHandle: 'content', mapping: {}},
-  { id: 'e1-4', source: '2', sourceHandle: 'toToday', target: '4', targetHandle: '', mapping: {}},
+  { id: 'e2-3', source: '2', sourceHandle: 'toNotes', target: '3', targetHandle: 'content', mapping: {}},
+  { id: 'e2-4', source: '2', sourceHandle: 'toToday', target: '4', targetHandle: '', mapping: {}},
 ];
