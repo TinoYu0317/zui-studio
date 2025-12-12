@@ -76,6 +76,14 @@ export default function ZVisionStudioPage() {
     );
   }, []);
 
+  const updateEdge = useCallback((edgeId: string, newEdgeData: Partial<ZVisionEdge>) => {
+    setEdges((eds) => 
+      eds.map((edge) => 
+        edge.id === edgeId ? { ...edge, ...newEdgeData } : edge
+      )
+    );
+  }, []);
+
   const selectedNode = selection.type === 'node' ? nodes.find(n => n.id === selection.id) : undefined;
   const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
@@ -98,13 +106,14 @@ export default function ZVisionStudioPage() {
             selectedItemId={selection.id}
             selectedItemType={selection.type}
           />
-          {isPanelVisible && <PreviewPanel />}
+          {isPanelVisible && <PreviewPanel edges={edges} selection={selection} />}
         </main>
         <InspectorPanel
           key={`${selection.type}:${selection.id ?? 'none'}`}
           node={selectedNode}
           edge={selectedEdge}
           component={selectedComponent as ZVisionComponent}
+          onUpdateEdge={updateEdge}
         />
       </div>
     </div>

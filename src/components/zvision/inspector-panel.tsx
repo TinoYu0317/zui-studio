@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Code, Settings, Workflow, Link } from 'lucide-react';
@@ -14,6 +16,7 @@ interface InspectorPanelProps {
   node?: ZVisionNode;
   edge?: ZVisionEdge;
   component?: ZVisionComponent;
+  onUpdateEdge?: (edgeId: string, newMapping: Partial<ZVisionEdge>) => void;
 }
 
 const PropertyItem = ({ prop, value }: { prop: ZVisionNodeProperty; value: any }) => (
@@ -82,7 +85,21 @@ const NodeInspector = ({ node, component }: { node: ZVisionNode; component: ZVis
   </>
 );
 
-const EdgeInspector = ({ edge }: { edge: ZVisionEdge }) => (
+const EdgeInspector = ({ edge, onUpdateEdge }: { edge: ZVisionEdge; onUpdateEdge?: (edgeId: string, newMapping: Partial<ZVisionEdge>) => void; }) => {
+    const [mappingJson, setMappingJson] = useState(JSON.stringify(edge.mapping || {}, null, 2));
+    const [error, setError] = useState<string | null>(null);
+
+    const handleApply = () => {
+        try {
+            const newMapping = JSON.parse(mappingJson);
+            setError(null);
+            onUpdateEdge?.(edge.id, { mapping: newMapping });
+        } catch (e) {
+            setError('Invalid JSON format.');
+        }
+    };
+    
+    return (
     <>
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2">
@@ -95,14 +112,24 @@ const EdgeInspector = ({ edge }: { edge: ZVisionEdge }) => (
       </CardHeader>
       <div className="mt-4 grid gap-4">
         <h3 className="font-semibold">Edge Mapping</h3>
-        <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-          {edge.mapping ? JSON.stringify(edge.mapping, null, 2) : '(empty)'}
-        </pre>
+         <div className="grid gap-2">
+            <Label htmlFor="edge-mapping-editor">JSON Mapping</Label>
+            <Textarea
+                id="edge-mapping-editor"
+                value={mappingJson}
+                onChange={(e) => setMappingJson(e.target.value)}
+                rows={8}
+                className="font-mono text-xs"
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button onClick={handleApply} size="sm">Apply</Button>
+        </div>
       </div>
     </>
   );
+}
 
-export function InspectorPanel({ node, edge, component }: InspectorPanelProps) {
+export function InspectorPanel({ node, edge, component, onUpdateEdge }: InspectorPanelProps) {
     const hasSelection = node || edge;
 
     return (
@@ -120,7 +147,7 @@ export function InspectorPanel({ node, edge, component }: InspectorPanelProps) {
             ) : (
                 <>
                 {node && component && <NodeInspector node={node} component={component} />}
-                {edge && <EdgeInspector edge={edge} />}
+                {edge && <EdgeInspector edge={edge} onUpdateEdge={onUpdateEdge} />}
                 </>
             )}
             </div>
