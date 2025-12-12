@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, MouseEvent as ReactMouseEvent } from 'react';
+import React, { useRef, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 import type { ZVisionNode } from '@/lib/zvision/types';
 import { components as componentDefs } from '@/lib/zvision/initial-data';
 import { ResizableBox } from './resizable-box';
@@ -12,7 +12,7 @@ interface DesignerCanvasProps {
     onNodeSelect: (id: string) => void;
     onCanvasClick: () => void;
     onUpdateNode: (id: string, data: Partial<ZVisionNode>) => void;
-    onNodeLongPress: (id: string) => void;
+    onNodeLongPress: (id:string) => void;
 }
 
 const DraggableComponent = ({ node, isSelected, onSelect, onUpdate, onLongPress }: {
@@ -23,45 +23,80 @@ const DraggableComponent = ({ node, isSelected, onSelect, onUpdate, onLongPress 
     onLongPress: (id: string) => void;
 }) => {
     const componentDef = componentDefs.find(c => c.type === node.type);
-    const dragRef = useRef({ dx: 0, dy: 0 });
+    const dragRef = useRef({ dx: 0, dy: 0, isDragging: false });
     const longPressTimeout = useRef<NodeJS.Timeout>();
+    const isTouch = useRef(false);
 
-    const handleMouseDown = (e: ReactMouseEvent) => {
-        e.stopPropagation();
-        
+    const handleInteractionStart = (clientX: number, clientY: number) => {
         longPressTimeout.current = setTimeout(() => {
             onLongPress(node.id);
             longPressTimeout.current = undefined; // Prevent click after long press
+            dragRef.current.isDragging = false;
         }, 500);
 
         dragRef.current = {
-            dx: e.clientX - node.position.x,
-            dy: e.clientY - node.position.y,
+            dx: clientX - node.position.x,
+            dy: clientY - node.position.y,
+            isDragging: true
         };
+    };
 
-        const handleMouseMove = (me: MouseEvent) => {
-            if (longPressTimeout.current) {
-                clearTimeout(longPressTimeout.current);
-                longPressTimeout.current = undefined;
-            }
-            const newPosition = {
-                x: me.clientX - dragRef.current.dx,
-                y: me.clientY - dragRef.current.dy,
-            };
-            onUpdate(node.id, { position: newPosition });
+    const handleInteractionMove = (clientX: number, clientY: number) => {
+        if (!dragRef.current.isDragging) return;
+
+        if (longPressTimeout.current) {
+            clearTimeout(longPressTimeout.current);
+            longPressTimeout.current = undefined;
+        }
+
+        const newPosition = {
+            x: clientX - dragRef.current.dx,
+            y: clientY - dragRef.current.dy,
         };
+        onUpdate(node.id, { position: newPosition });
+    };
 
+    const handleInteractionEnd = () => {
+        if (longPressTimeout.current) {
+            clearTimeout(longPressTimeout.current);
+            onSelect(node.id); // It's a click
+        }
+        dragRef.current.isDragging = false;
+    };
+    
+    // Mouse Events
+    const handleMouseDown = (e: ReactMouseEvent) => {
+        if(isTouch.current) return;
+        e.stopPropagation();
+        handleInteractionStart(e.clientX, e.clientY);
+        
+        const handleMouseMove = (me: MouseEvent) => handleInteractionMove(me.clientX, me.clientY);
         const handleMouseUp = () => {
-            if (longPressTimeout.current) {
-                clearTimeout(longPressTimeout.current);
-                onSelect(node.id); // It's a click
-            }
+            handleInteractionEnd();
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
 
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    // Touch Events
+    const handleTouchStart = (e: ReactTouchEvent) => {
+        isTouch.current = true;
+        e.stopPropagation();
+        const touch = e.touches[0];
+        handleInteractionStart(touch.clientX, touch.clientY);
+
+        const handleTouchMove = (te: globalThis.TouchEvent) => handleInteractionMove(te.touches[0].clientX, te.touches[0].clientY);
+        const handleTouchEnd = () => {
+            handleInteractionEnd();
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+        };
+
+        document.addEventListener('touchmove', handleTouchMove);
+        document.addEventListener('touchend', handleTouchEnd);
     };
 
     const handleResize = (size: { width: number, height: number }) => {
@@ -117,6 +152,7 @@ const DraggableComponent = ({ node, isSelected, onSelect, onUpdate, onLongPress 
             size={node.size}
             isSelected={isSelected}
             onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
             onClick={() => onSelect(node.id)}
             onResize={handleResize}
         >
@@ -132,6 +168,7 @@ export function DesignerCanvas({ nodes, selectedNodeId, onNodeSelect, onCanvasCl
         <div 
             className="flex-1 bg-muted/20 flex items-center justify-center overflow-auto"
             onClick={onCanvasClick}
+            onTouchEnd={onCanvasClick}
         >
             <div className="w-[414px] h-[736px] bg-background rounded-2xl shadow-2xl overflow-hidden relative border-4 border-foreground flex-shrink-0 my-8">
                 <div className="w-full h-full relative">

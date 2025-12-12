@@ -91,7 +91,7 @@ const ShapeInspector = ({ node, onUpdateNode }: { node: ZVisionNode, onUpdateNod
                         </div>
                          <div className="grid gap-1">
                             <Label htmlFor="text-color">Color</Label>
-                            <Input id="text-color" type="color" value={node.data.color} onChange={e => updateNodeData({ color: e.target.value })} className="p-1" />
+                            <Input id="text-color" type="color" value={node.data.color} onChange={e => updateNodeData({ color: e.target.value })} className="p-1 h-10" />
                         </div>
                     </div>
                     <Separator />
@@ -103,7 +103,7 @@ const ShapeInspector = ({ node, onUpdateNode }: { node: ZVisionNode, onUpdateNod
                     <h3 className="font-semibold">Appearance</h3>
                      <div className="grid gap-2">
                         <Label htmlFor="fill-color">Fill</Label>
-                        <Input id="fill-color" type="color" value={node.data.fill} onChange={e => updateNodeData({ fill: e.target.value })} className="p-1" />
+                        <Input id="fill-color" type="color" value={node.data.fill} onChange={e => updateNodeData({ fill: e.target.value })} className="p-1 h-10" />
                     </div>
                     <div className="grid gap-2">
                         <Label>Opacity</Label>
@@ -229,7 +229,7 @@ export function InspectorPanel({ mode, node, edge, component, onUpdateNode, onUp
     const hasSelection = node || edge;
 
     return (
-        <aside className="w-80 flex-shrink-0 border-l bg-card">
+        <aside className="w-full md:w-80 flex-shrink-0 border-l bg-card h-full">
         <ScrollArea className="h-full">
             <div className="p-4">
             {!hasSelection ? (

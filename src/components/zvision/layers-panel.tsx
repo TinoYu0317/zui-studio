@@ -28,7 +28,7 @@ const LayerItem = ({ node, isSelected, onSelect }: { node: ZVisionNode; isSelect
     >
       {component && <component.icon className="h-4 w-4 text-muted-foreground" />}
       <span className="flex-1 truncate">{component?.name || node.type}</span>
-      <Button variant="ghost" size="icon" className="h-6 w-6">
+      <Button variant="ghost" size="icon" className="h-8 w-8">
         <Eye className="h-4 w-4" />
       </Button>
     </div>
@@ -37,7 +37,7 @@ const LayerItem = ({ node, isSelected, onSelect }: { node: ZVisionNode; isSelect
 
 export function LayersPanel({ nodes, selectedNodeId, onSelectNode }: LayersPanelProps) {
   return (
-    <aside className="w-64 flex-shrink-0 border-r bg-card">
+    <aside className="w-full md:w-64 flex-shrink-0 border-r bg-card h-full">
       <div className="flex h-full flex-col">
         <div className="p-4">
           <h2 className="text-lg font-semibold tracking-tight">Layers</h2>

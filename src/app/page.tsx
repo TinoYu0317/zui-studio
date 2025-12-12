@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, DragEvent } from 'react';
+import React, { useState, useCallback, useRef, DragEvent, useEffect } from 'react';
 import { ComponentLibrary } from '@/components/zvision/component-library';
 import { DesignerCanvas } from '@/components/zvision/designer-canvas';
 import { LayersPanel } from '@/components/zvision/layers-panel';
@@ -11,6 +11,10 @@ import { RenderRuntime } from '@/components/zvision/render-runtime';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent, CapabilityPatch } from '@/lib/zvision/types';
 import { Toolbar } from '@/components/zvision/toolbar';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { GraphCanvas } from '@/components/zvision/graph-canvas';
+import { PreviewPanel } from '@/components/zvision/preview-panel';
+
 
 type Selection = {
   id: string | null;
@@ -26,6 +30,7 @@ export default function ZVisionStudioPage() {
   const [selection, setSelection] = useState<Selection>({ id: '3', type: 'node' });
   const [mode, setMode] = useState<ViewMode>('designer');
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
 
   const [chatNode, setChatNode] = useState<ZVisionNode | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -35,6 +40,18 @@ export default function ZVisionStudioPage() {
   const handleSelect = (id: string | null, type: 'node' | 'edge' | null) => {
     setSelection({ id, type });
   };
+  
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleSelect(null, null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleNodeLongPress = (nodeId: string) => {
     const nodeToChat = nodes.find(n => n.id === nodeId);
@@ -114,72 +131,81 @@ export default function ZVisionStudioPage() {
   const chatComponent = chatNode ? componentDefs.find(c => c.type === chatNode.type) : null;
 
   return (
-    <div className="flex flex-col h-screen bg-muted/40 text-foreground">
-      <AppHeader
-        mode={mode}
-        onModeChange={setMode}
-        isPreviewing={isPreviewing}
-        onToggleIsPreviewing={() => setIsPreviewing(!isPreviewing)}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        {mode === 'developer' && <ComponentLibrary components={componentDefs} />}
-        {mode === 'designer' && <LayersPanel nodes={nodes} selectedNodeId={selection.id} onSelectNode={(id) => handleSelect(id, 'node')} />}
-
-        <main className="flex-1 flex flex-col relative overflow-hidden">
-          {mode === 'developer' && (
-            <GraphCanvas
-              ref={graphCanvasRef}
-              nodes={nodes}
-              edges={edges}
-              patches={patches}
-              onNodeClick={(id) => handleSelect(id, 'node')}
-              onEdgeClick={(id) => handleSelect(id, 'edge')}
-              onCanvasClick={() => handleSelect(null, null)}
-              updateNodePosition={(id, pos) => updateNode(id, { position: pos })}
-              onDrop={onNodeDrop}
-              onNodeLongPress={handleNodeLongPress}
-              selectedItemId={selection.id}
-              selectedItemType={selection.type}
-            />
-          )}
-          {mode === 'designer' && !isPreviewing && (
-            <>
-              <Toolbar onAddShape={addNode} />
-              <DesignerCanvas
-                nodes={nodes}
-                onNodeSelect={(id) => handleSelect(id, 'node')}
-                onCanvasClick={() => handleSelect(null, null)}
-                onUpdateNode={updateNode}
-                onNodeLongPress={handleNodeLongPress}
-                selectedNodeId={selection.id}
-              />
-            </>
-          )}
-           {mode === 'designer' && isPreviewing && (
-            <RenderRuntime nodes={nodes} />
-          )}
-        </main>
-        
-        <InspectorPanel
-          key={`${selection.type}:${selection.id ?? 'none'}`}
+    <SidebarProvider>
+      <div className="flex flex-col h-screen bg-muted/40 text-foreground">
+        <AppHeader
           mode={mode}
-          node={selectedNode}
-          edge={selectedEdge}
-          component={selectedComponent as ZVisionComponent}
-          onUpdateNode={updateNode}
-          onUpdateEdge={updateEdge}
+          onModeChange={setMode}
+          isPreviewing={isPreviewing}
+          onToggleIsPreviewing={() => setIsPreviewing(!isPreviewing)}
         />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar>
+            {mode === 'developer' && <ComponentLibrary components={componentDefs} />}
+            {mode === 'designer' && <LayersPanel nodes={nodes} selectedNodeId={selection.id} onSelectNode={(id) => handleSelect(id, 'node')} />}
+          </Sidebar>
+          
+          <SidebarInset>
+            <main className="flex-1 flex flex-col relative overflow-hidden">
+              {mode === 'developer' && (
+                <GraphCanvas
+                  ref={graphCanvasRef}
+                  nodes={nodes}
+                  edges={edges}
+                  patches={patches}
+                  onNodeClick={(id) => handleSelect(id, 'node')}
+                  onEdgeClick={(id) => handleSelect(id, 'edge')}
+                  onCanvasClick={() => handleSelect(null, null)}
+                  updateNodePosition={(id, pos) => updateNode(id, { position: pos })}
+                  onDrop={onNodeDrop}
+                  onNodeLongPress={handleNodeLongPress}
+                  selectedItemId={selection.id}
+                  selectedItemType={selection.type}
+                />
+              )}
+              {mode === 'designer' && !isPreviewing && (
+                <>
+                  <Toolbar onAddShape={addNode} />
+                  <DesignerCanvas
+                    nodes={nodes}
+                    onNodeSelect={(id) => handleSelect(id, 'node')}
+                    onCanvasClick={() => handleSelect(null, null)}
+                    onUpdateNode={updateNode}
+                    onNodeLongPress={handleNodeLongPress}
+                    selectedNodeId={selection.id}
+                  />
+                </>
+              )}
+              {mode === 'designer' && isPreviewing && (
+                <RenderRuntime nodes={nodes} />
+              )}
+              {isPanelVisible && mode === 'developer' && <PreviewPanel edges={edges} selection={selection} />}
+            </main>
+          </SidebarInset>
+          
+          <Sidebar side="right">
+            <InspectorPanel
+              key={`${selection.type}:${selection.id ?? 'none'}`}
+              mode={mode}
+              node={selectedNode}
+              edge={selectedEdge}
+              component={selectedComponent as ZVisionComponent}
+              onUpdateNode={updateNode}
+              onUpdateEdge={updateEdge}
+            />
+          </Sidebar>
+        </div>
+        {chatNode && chatComponent && (
+          <ComponentVibeChat
+            open={isChatOpen}
+            onOpenChange={setIsChatOpen}
+            node={chatNode}
+            component={chatComponent}
+            onApplyPatch={handleApplyPatch}
+            onDiscardPatch={handleDiscardPatch}
+          />
+        )}
       </div>
-      {chatNode && chatComponent && (
-        <ComponentVibeChat
-          open={isChatOpen}
-          onOpenChange={setIsChatOpen}
-          node={chatNode}
-          component={chatComponent}
-          onApplyPatch={handleApplyPatch}
-          onDiscardPatch={handleDiscardPatch}
-        />
-      )}
-    </div>
+    </SidebarProvider>
   );
 }

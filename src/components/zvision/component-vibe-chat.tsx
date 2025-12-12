@@ -83,7 +83,7 @@ export function ComponentVibeChat({
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent className="sm:max-w-xl w-full flex flex-col">
+      <SheetContent side="bottom" className="sm:max-w-none md:max-w-xl h-[70vh] flex flex-col mx-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="h-6 w-6 text-primary" />
@@ -93,7 +93,7 @@ export function ComponentVibeChat({
             Editing <span className="font-bold text-foreground">{component.name}</span>. Tell me what you want it to do.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 flex flex-col gap-4 py-4">
+        <div className="flex-1 flex flex-col gap-4 py-4 overflow-y-auto">
           <div className="grid gap-2">
             <Label htmlFor="request">Your request</Label>
             <Textarea
