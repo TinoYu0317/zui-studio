@@ -8,6 +8,7 @@ import { LayersPanel } from '@/components/zvision/layers-panel';
 import { InspectorPanel } from '@/components/zvision/inspector-panel';
 import { AppHeader } from '@/components/zvision/header';
 import { ComponentVibeChat } from '@/components/zvision/component-vibe-chat';
+import { PreviewPanel } from '@/components/zvision/preview-panel';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent, CapabilityPatch } from '@/lib/zvision/types';
 
