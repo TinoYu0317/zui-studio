@@ -2,16 +2,15 @@
 
 import React, { useState, useCallback, useRef, DragEvent } from 'react';
 import { ComponentLibrary } from '@/components/zvision/component-library';
-import { GraphCanvas } from '@/components/zvision/graph-canvas';
 import { DesignerCanvas } from '@/components/zvision/designer-canvas';
 import { LayersPanel } from '@/components/zvision/layers-panel';
 import { InspectorPanel } from '@/components/zvision/inspector-panel';
 import { AppHeader } from '@/components/zvision/header';
 import { ComponentVibeChat } from '@/components/zvision/component-vibe-chat';
-import { PreviewPanel } from '@/components/zvision/preview-panel';
 import { RenderRuntime } from '@/components/zvision/render-runtime';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent, CapabilityPatch } from '@/lib/zvision/types';
+import { Toolbar } from '@/components/zvision/toolbar';
 
 type Selection = {
   id: string | null;
@@ -24,8 +23,7 @@ export default function ZVisionStudioPage() {
   const [nodes, setNodes] = useState<ZVisionNode[]>(initialNodes);
   const [edges, setEdges] = useState<ZVisionEdge[]>(initialEdges);
   const [patches, setPatches] = useState<CapabilityPatch[]>([]);
-  const [selection, setSelection] = useState<Selection>({ id: '1', type: 'node' });
-  const [isPanelVisible, setIsPanelVisible] = useState(true);
+  const [selection, setSelection] = useState<Selection>({ id: '3', type: 'node' });
   const [mode, setMode] = useState<ViewMode>('designer');
   const [isPreviewing, setIsPreviewing] = useState(false);
 
@@ -34,16 +32,8 @@ export default function ZVisionStudioPage() {
 
   const graphCanvasRef = useRef<HTMLDivElement>(null);
 
-  const handleSelectNode = (nodeId: string) => {
-    setSelection({ id: nodeId, type: 'node' });
-  };
-  
-  const handleSelectEdge = (edgeId: string) => {
-    setSelection({ id: edgeId, type: 'edge' });
-  };
-  
-  const handleCanvasClick = () => {
-    setSelection({ id: null, type: null });
+  const handleSelect = (id: string | null, type: 'node' | 'edge' | null) => {
+    setSelection({ id, type });
   };
 
   const handleNodeLongPress = (nodeId: string) => {
@@ -54,19 +44,19 @@ export default function ZVisionStudioPage() {
     }
   };
 
-  const addNode = useCallback((componentType: string, position: { x: number; y: number }) => {
+  const addNode = useCallback((componentType: string, position?: { x: number; y: number }) => {
     const component = componentDefs.find(c => c.type === componentType);
     if (!component) return;
 
     const newNode: ZVisionNode = {
       id: `node_${Date.now()}`,
       type: componentType,
-      position,
+      position: position || { x: 100, y: 100 },
       data: Object.fromEntries(component.props.map(p => [p.name, p.defaultValue])),
-      // Add default size for designer mode
-      size: { width: 200, height: 80 }
+      size: { width: component.defaultSize?.width || 200, height: component.defaultSize?.height || 80 }
     };
     setNodes((nds) => nds.concat(newNode));
+    handleSelect(newNode.id, 'node');
   }, []);
 
   const onNodeDrop = useCallback((event: DragEvent) => {
@@ -92,7 +82,7 @@ export default function ZVisionStudioPage() {
     setNodes((nds) =>
       nds.map((node) =>
         node.id === nodeId
-          ? { ...node, ...data }
+          ? { ...node, ...data, data: data.data ? {...node.data, ...data.data} : node.data }
           : node
       )
     );
@@ -118,7 +108,6 @@ export default function ZVisionStudioPage() {
     setPatches(prevPatches => prevPatches.filter(p => p.id !== patchId));
   };
 
-
   const selectedNode = selection.type === 'node' ? nodes.find(n => n.id === selection.id) : undefined;
   const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
@@ -129,13 +118,12 @@ export default function ZVisionStudioPage() {
       <AppHeader
         mode={mode}
         onModeChange={setMode}
-        onTogglePreview={() => setIsPanelVisible(!isPanelVisible)}
         isPreviewing={isPreviewing}
         onToggleIsPreviewing={() => setIsPreviewing(!isPreviewing)}
       />
       <div className="flex flex-1 overflow-hidden">
         {mode === 'developer' && <ComponentLibrary components={componentDefs} />}
-        {mode === 'designer' && <LayersPanel nodes={nodes} selectedNodeId={selection.id} onSelectNode={handleSelectNode} />}
+        {mode === 'designer' && <LayersPanel nodes={nodes} selectedNodeId={selection.id} onSelectNode={(id) => handleSelect(id, 'node')} />}
 
         <main className="flex-1 flex flex-col relative overflow-hidden">
           {mode === 'developer' && (
@@ -144,9 +132,9 @@ export default function ZVisionStudioPage() {
               nodes={nodes}
               edges={edges}
               patches={patches}
-              onNodeClick={handleSelectNode}
-              onEdgeClick={handleSelectEdge}
-              onCanvasClick={handleCanvasClick}
+              onNodeClick={(id) => handleSelect(id, 'node')}
+              onEdgeClick={(id) => handleSelect(id, 'edge')}
+              onCanvasClick={() => handleSelect(null, null)}
               updateNodePosition={(id, pos) => updateNode(id, { position: pos })}
               onDrop={onNodeDrop}
               onNodeLongPress={handleNodeLongPress}
@@ -155,20 +143,21 @@ export default function ZVisionStudioPage() {
             />
           )}
           {mode === 'designer' && !isPreviewing && (
-            <DesignerCanvas
-              nodes={nodes}
-              onNodeSelect={handleSelectNode}
-              onCanvasClick={handleCanvasClick}
-              onUpdateNode={updateNode}
-              onNodeLongPress={handleNodeLongPress}
-              selectedNodeId={selection.id}
-            />
+            <>
+              <Toolbar onAddShape={addNode} />
+              <DesignerCanvas
+                nodes={nodes}
+                onNodeSelect={(id) => handleSelect(id, 'node')}
+                onCanvasClick={() => handleSelect(null, null)}
+                onUpdateNode={updateNode}
+                onNodeLongPress={handleNodeLongPress}
+                selectedNodeId={selection.id}
+              />
+            </>
           )}
            {mode === 'designer' && isPreviewing && (
             <RenderRuntime nodes={nodes} />
           )}
-
-          {isPanelVisible && mode === 'developer' && <PreviewPanel edges={edges} selection={selection} />}
         </main>
         
         <InspectorPanel

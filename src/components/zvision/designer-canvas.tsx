@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useCallback, useRef, MouseEvent as ReactMouseEvent } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useRef, MouseEvent as ReactMouseEvent } from 'react';
 import type { ZVisionNode } from '@/lib/zvision/types';
 import { components as componentDefs } from '@/lib/zvision/initial-data';
-import { Card, CardContent } from '../ui/card';
 import { ResizableBox } from './resizable-box';
 
 
@@ -76,17 +74,37 @@ const DraggableComponent = ({ node, isSelected, onSelect, onUpdate, onLongPress 
 
     // A mock renderer for components. In a real app, this would be more sophisticated.
     const renderComponent = () => {
+        const { data } = node;
+        const style: React.CSSProperties = {
+            width: '100%',
+            height: '100%',
+            backgroundColor: data.fill,
+            borderRadius: `${data.radius || 0}px`,
+            opacity: data.opacity,
+            border: data.strokeWidth ? `${data.strokeWidth || 1}px solid ${data.stroke || '#000'}` : 'none'
+        };
+
+        if (data.glass) {
+            style.backgroundColor = 'var(--glass-bg)';
+            style.backdropFilter = 'blur(var(--glass-blur))';
+            style.WebkitBackdropFilter = 'blur(var(--glass-blur))';
+            style.border = '1px solid var(--glass-border-color)';
+            style.boxShadow = '0 8px 32px 0 var(--glass-shadow-color)';
+        }
+
         switch(node.type) {
-            case 'InputDoor':
-                return <div className="p-2 border rounded-md">{node.data.label || 'Input'}</div>
-            case 'NotesFrame':
-                return <Card><CardContent className="p-2">{node.data.title}</CardContent></Card>
-            case 'TodayFrame':
-                 return <Card><CardContent className="p-2">Today</CardContent></Card>
+            case 'ShapeRectangle':
+                return <div style={style}></div>
+            case 'ShapeText':
+                return (
+                    <div style={{color: data.color, fontSize: `${data.fontSize || 16}px`, fontWeight: data.fontWeight || 'normal'}}>
+                        {data.text || 'Text'}
+                    </div>
+                )
             default:
                 return (
-                    <div className="flex items-center gap-2 p-2 border rounded-md">
-                        <componentDef.icon className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center justify-center w-full h-full p-2 border rounded-md bg-muted text-muted-foreground text-xs">
+                        <componentDef.icon className="h-4 w-4 mr-2" />
                         <span>{componentDef.name}</span>
                     </div>
                 )
@@ -102,7 +120,7 @@ const DraggableComponent = ({ node, isSelected, onSelect, onUpdate, onLongPress 
             onClick={() => onSelect(node.id)}
             onResize={handleResize}
         >
-            <div className="w-full h-full bg-background overflow-hidden pointer-events-none">
+            <div className="w-full h-full overflow-hidden pointer-events-none">
                 {renderComponent()}
             </div>
         </ResizableBox>
@@ -112,10 +130,10 @@ const DraggableComponent = ({ node, isSelected, onSelect, onUpdate, onLongPress 
 export function DesignerCanvas({ nodes, selectedNodeId, onNodeSelect, onCanvasClick, onUpdateNode, onNodeLongPress }: DesignerCanvasProps) {
     return (
         <div 
-            className="flex-1 bg-muted/20 flex items-center justify-center"
+            className="flex-1 bg-muted/20 flex items-center justify-center overflow-auto"
             onClick={onCanvasClick}
         >
-            <div className="w-[414px] h-[736px] bg-background rounded-2xl shadow-2xl overflow-hidden relative border-4 border-foreground">
+            <div className="w-[414px] h-[736px] bg-background rounded-2xl shadow-2xl overflow-hidden relative border-4 border-foreground flex-shrink-0 my-8">
                 <div className="w-full h-full relative">
                     {nodes.map(node => (
                         <DraggableComponent

@@ -3,7 +3,7 @@ export type PropertyType = 'string' | 'number' | 'boolean' | 'json' | 'assetUrl'
 export interface ZVisionNodeProperty {
   name: string;
   type: PropertyType;
-  defaultValue: any;
+  defaultValue?: any;
   description?: string;
 }
 
@@ -30,6 +30,7 @@ export interface ZVisionComponent {
   name: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  defaultSize?: { width: number; height: number };
   props: ZVisionNodeProperty[];
   bindings: ZVisionNodeBinding[];
   actions: ZVisionNodeAction[];

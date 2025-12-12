@@ -1,7 +1,37 @@
 import type { ZVisionComponent, ZVisionNode, ZVisionEdge } from './types';
-import { LogIn, GitFork, Clock, StickyNote, Calendar, Box } from 'lucide-react';
+import { LogIn, GitFork, Clock, StickyNote, Calendar, Box, Square, Type, Image as ImageIcon, RectangleHorizontal } from 'lucide-react';
 
 export const components: ZVisionComponent[] = [
+  // SHAPES
+  {
+    type: 'ShapeRectangle',
+    name: 'Rectangle',
+    description: 'A basic rectangle shape.',
+    icon: Square,
+    defaultSize: { width: 150, height: 100 },
+    props: [
+        { name: 'fill', type: 'string', defaultValue: '#cccccc' },
+        { name: 'radius', type: 'number', defaultValue: 8 },
+        { name: 'opacity', type: 'number', defaultValue: 1 },
+        { name: 'glass', type: 'boolean', defaultValue: false },
+    ],
+    bindings: [], actions: [], events: [],
+  },
+  {
+    type: 'ShapeText',
+    name: 'Text',
+    description: 'A text element.',
+    icon: Type,
+    defaultSize: { width: 120, height: 40 },
+    props: [
+        { name: 'text', type: 'string', defaultValue: 'Hello, World' },
+        { name: 'fontSize', type: 'number', defaultValue: 16 },
+        { name: 'fontWeight', type: 'string', defaultValue: 'normal' },
+        { name: 'color', type: 'string', defaultValue: '#000000' },
+    ],
+    bindings: [], actions: [], events: [],
+  },
+  // COMPONENTS
   {
     type: 'InputDoor',
     name: 'Input Door',
@@ -58,38 +88,6 @@ export const components: ZVisionComponent[] = [
     actions: [],
     events: [
       { name: 'onSave', outputs: [{ name: 'content', type: 'string', defaultValue: '' }], description: 'Fires when the note content is saved.' },
-    ],
-  },
-  {
-    type: 'CalendarFrame',
-    name: 'Calendar',
-    description: 'Displays a monthly calendar.',
-    icon: Calendar,
-    props: [],
-    bindings: [],
-    actions: [],
-    events: [
-      { name: 'onDateSelect', outputs: [{ name: 'selectedDate', type: 'string', defaultValue: '' }], description: 'Fires when a date is selected.' },
-    ],
-  },
-  {
-    type: 'GLBFrame',
-    name: 'GLB Viewer',
-    description: 'Displays a 3D model from a GLB file.',
-    icon: Box,
-    props: [
-      { name: 'scale', type: 'number', defaultValue: 1 },
-      { name: 'rotationY', type: 'number', defaultValue: 0 },
-    ],
-    bindings: [
-      { name: 'assetUrl', type: 'assetUrl' },
-    ],
-    actions: [
-      { name: 'playAnimation', inputs: [{ name: 'animationName', type: 'string', defaultValue: '' }] },
-    ],
-    events: [
-      { name: 'onLoad', outputs: [] },
-      { name: 'onClick', outputs: [{ name: 'meshName', type: 'string', defaultValue: '' }] },
     ],
   },
 ];
