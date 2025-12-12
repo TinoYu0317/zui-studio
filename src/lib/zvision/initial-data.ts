@@ -102,7 +102,7 @@ export const initialNodes: ZVisionNode[] = [
 ];
 
 export const initialEdges: ZVisionEdge[] = [
-  { id: 'e1-2', source: '1', sourceHandle: 'onSend', target: '2', targetHandle: 'route' },
-  { id: 'e1-3', source: '2', sourceHandle: 'toNotes', target: '3', targetHandle: 'content'},
-  { id: 'e1-4', source: '2', sourceHandle: 'toToday', target: '4', targetHandle: ''},
+  { id: 'e1-2', source: '1', sourceHandle: 'onSend', target: '2', targetHandle: 'route', mapping: {} },
+  { id: 'e1-3', source: '2', sourceHandle: 'toNotes', target: '3', targetHandle: 'content', mapping: {}},
+  { id: 'e1-4', source: '2', sourceHandle: 'toToday', target: '4', targetHandle: '', mapping: {}},
 ];

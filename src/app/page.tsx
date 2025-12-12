@@ -12,10 +12,26 @@ import type { ZVisionNode, ZVisionEdge, ZVisionComponent } from '@/lib/zvision/t
 export default function ZVisionStudioPage() {
   const [nodes, setNodes] = useState<ZVisionNode[]>(initialNodes);
   const [edges, setEdges] = useState<ZVisionEdge[]>(initialEdges);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>('1');
+  const [selectedItemId, setSelectedItemId] = useState<string | null>('1');
+  const [selectedItemType, setSelectedItemType] = useState<'node' | 'edge' | null>('node');
   const [isPanelVisible, setIsPanelVisible] = useState(true);
 
   const graphCanvasRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectNode = (nodeId: string) => {
+    setSelectedItemId(nodeId);
+    setSelectedItemType('node');
+  };
+  
+  const handleSelectEdge = (edgeId: string) => {
+    setSelectedItemId(edgeId);
+    setSelectedItemType('edge');
+  };
+  
+  const handleCanvasClick = () => {
+    setSelectedItemId(null);
+    setSelectedItemType(null);
+  };
 
   const addNode = useCallback((componentType: string, position: { x: number; y: number }) => {
     const component = componentDefs.find(c => c.type === componentType);
@@ -59,7 +75,8 @@ export default function ZVisionStudioPage() {
     );
   }, []);
 
-  const selectedNode = nodes.find(n => n.id === selectedNodeId);
+  const selectedNode = selectedItemType === 'node' ? nodes.find(n => n.id === selectedItemId) : undefined;
+  const selectedEdge = selectedItemType === 'edge' ? edges.find(e => e.id === selectedItemId) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
 
   return (
@@ -72,17 +89,20 @@ export default function ZVisionStudioPage() {
             ref={graphCanvasRef}
             nodes={nodes}
             edges={edges}
-            onNodeClick={setSelectedNodeId}
-            onCanvasClick={() => setSelectedNodeId(null)}
+            onNodeClick={handleSelectNode}
+            onEdgeClick={handleSelectEdge}
+            onCanvasClick={handleCanvasClick}
             updateNodePosition={updateNodePosition}
             onDrop={onNodeDrop}
-            selectedNodeId={selectedNodeId}
+            selectedItemId={selectedItemId}
+            selectedItemType={selectedItemType}
           />
           {isPanelVisible && <PreviewPanel />}
         </main>
         <InspectorPanel
-          key={selectedNodeId}
+          key={selectedItemId}
           node={selectedNode}
+          edge={selectedEdge}
           component={selectedComponent as ZVisionComponent}
         />
       </div>

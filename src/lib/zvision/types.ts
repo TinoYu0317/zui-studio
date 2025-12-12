@@ -8,7 +8,7 @@ export interface ZVisionNodeProperty {
 }
 
 export interface ZVisionNodeBinding {
-  name: string;
+  name:string;
   type: PropertyType;
   description?: string;
 }
@@ -49,4 +49,5 @@ export interface ZVisionEdge {
   sourceHandle: string;
   target: string;
   targetHandle: string;
+  mapping?: Record<string, any>;
 }
