@@ -6,6 +6,7 @@ import { GraphCanvas } from '@/components/zvision/graph-canvas';
 import { InspectorPanel } from '@/components/zvision/inspector-panel';
 import { PreviewPanel } from '@/components/zvision/preview-panel';
 import { AppHeader } from '@/components/zvision/header';
+import { ComponentVibeChat } from '@/components/zvision/component-vibe-chat';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent } from '@/lib/zvision/types';
 
@@ -20,6 +21,9 @@ export default function ZVisionStudioPage() {
   const [selection, setSelection] = useState<Selection>({ id: '1', type: 'node' });
   const [isPanelVisible, setIsPanelVisible] = useState(true);
 
+  const [chatNode, setChatNode] = useState<ZVisionNode | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   const graphCanvasRef = useRef<HTMLDivElement>(null);
 
   const handleSelectNode = (nodeId: string) => {
@@ -32,6 +36,14 @@ export default function ZVisionStudioPage() {
   
   const handleCanvasClick = () => {
     setSelection({ id: null, type: null });
+  };
+
+  const handleNodeLongPress = (nodeId: string) => {
+    const nodeToChat = nodes.find(n => n.id === nodeId);
+    if (nodeToChat) {
+      setChatNode(nodeToChat);
+      setIsChatOpen(true);
+    }
   };
 
   const addNode = useCallback((componentType: string, position: { x: number; y: number }) => {
@@ -87,6 +99,7 @@ export default function ZVisionStudioPage() {
   const selectedNode = selection.type === 'node' ? nodes.find(n => n.id === selection.id) : undefined;
   const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
+  const chatComponent = chatNode ? componentDefs.find(c => c.type === chatNode.type) : null;
 
   return (
     <div className="flex flex-col h-screen bg-muted/40 text-foreground">
@@ -103,6 +116,7 @@ export default function ZVisionStudioPage() {
             onCanvasClick={handleCanvasClick}
             updateNodePosition={updateNodePosition}
             onDrop={onNodeDrop}
+            onNodeLongPress={handleNodeLongPress}
             selectedItemId={selection.id}
             selectedItemType={selection.type}
           />
@@ -116,6 +130,14 @@ export default function ZVisionStudioPage() {
           onUpdateEdge={updateEdge}
         />
       </div>
+      {chatNode && chatComponent && (
+        <ComponentVibeChat
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          node={chatNode}
+          component={chatComponent}
+        />
+      )}
     </div>
   );
 }

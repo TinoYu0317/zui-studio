@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, MouseEvent as ReactMouseEvent } from 'react';
+import React, { useRef, MouseEvent as ReactMouseEvent, useEffect } from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { ZVisionNode as NodeType } from '@/lib/zvision/types';
@@ -10,6 +10,7 @@ import { Separator } from '../ui/separator';
 interface ZVisionNodeProps {
   node: NodeType;
   onClick: (id: string) => void;
+  onLongPress: (id: string) => void;
   updatePosition: (id: string, pos: { x: number, y: number }) => void;
   isSelected: boolean;
 }
@@ -22,21 +23,30 @@ const Port = ({ type, name }: { type: 'in' | 'out', name: string }) => (
   </div>
 );
 
-export function ZVisionNode({ node, onClick, updatePosition, isSelected }: ZVisionNodeProps) {
+export function ZVisionNode({ node, onClick, onLongPress, updatePosition, isSelected }: ZVisionNodeProps) {
   const dragRef = useRef({ dx: 0, dy: 0 });
+  const longPressTimeout = useRef<NodeJS.Timeout>();
   const component = componentDefs.find(c => c.type === node.type);
   if (!component) return null;
 
   const handleMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    onClick(node.id);
     
+    longPressTimeout.current = setTimeout(() => {
+        onLongPress(node.id);
+        longPressTimeout.current = undefined; // Prevent click after long press
+    }, 500);
+
     dragRef.current = {
       dx: e.clientX - node.position.x,
       dy: e.clientY - node.position.y,
     };
 
     const handleMouseMove = (me: MouseEvent) => {
+      if (longPressTimeout.current) {
+        clearTimeout(longPressTimeout.current);
+        longPressTimeout.current = undefined;
+      }
       const newPosition = {
         x: me.clientX - dragRef.current.dx,
         y: me.clientY - dragRef.current.dy,
@@ -45,6 +55,10 @@ export function ZVisionNode({ node, onClick, updatePosition, isSelected }: ZVisi
     };
 
     const handleMouseUp = () => {
+      if (longPressTimeout.current) {
+        clearTimeout(longPressTimeout.current);
+        onClick(node.id); // It's a click
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -52,21 +66,21 @@ export function ZVisionNode({ node, onClick, updatePosition, isSelected }: ZVisi
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
-
+  
   const inputs = [...(component.actions || []), ...(component.bindings || [])];
   const outputs = component.events || [];
 
   return (
     <Card
       className={cn(
-        "absolute w-[200px] shadow-lg hover:shadow-xl transition-all duration-200 border-2",
+        "absolute w-[200px] shadow-lg hover:shadow-xl transition-all duration-200 border-2 select-none",
         isSelected ? "border-primary shadow-primary/20" : "border-transparent"
       )}
       style={{ left: node.position.x, top: node.position.y }}
       onMouseDown={handleMouseDown}
       onClick={(e) => e.stopPropagation()}
     >
-      <CardHeader className="p-3">
+      <CardHeader className="p-3 cursor-grab">
         <div className="flex items-center gap-2">
           <component.icon className="h-5 w-5 text-primary" />
           <CardTitle className="text-base truncate">{component.name}</CardTitle>

@@ -14,6 +14,7 @@ interface GraphCanvasProps extends React.HTMLAttributes<HTMLDivElement> {
   onCanvasClick: () => void;
   updateNodePosition: (id: string, pos: { x: number, y: number }) => void;
   onDrop: (event: DragEvent) => void;
+  onNodeLongPress: (id: string) => void;
   selectedItemId: string | null;
   selectedItemType: 'node' | 'edge' | null;
 }
@@ -60,7 +61,7 @@ const getPortOffset = (node: NodeType, handle: string): { x: number, y: number }
 
 
 export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
-  ({ nodes, edges, onNodeClick, onEdgeClick, onCanvasClick, updateNodePosition, onDrop, selectedItemId, selectedItemType, className, ...props }, ref) => {
+  ({ nodes, edges, onNodeClick, onEdgeClick, onCanvasClick, updateNodePosition, onDrop, onNodeLongPress, selectedItemId, selectedItemType, className, ...props }, ref) => {
     
     const onDragOver = (event: DragEvent) => {
       event.preventDefault();
@@ -83,6 +84,7 @@ export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
             key={node.id}
             node={node}
             onClick={onNodeClick}
+            onLongPress={onNodeLongPress}
             updatePosition={updateNodePosition}
             isSelected={selectedItemType === 'node' && node.id === selectedItemId}
           />
