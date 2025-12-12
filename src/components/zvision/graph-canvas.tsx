@@ -2,18 +2,22 @@
 
 import React, { forwardRef, DragEvent } from 'react';
 import { cn } from '@/lib/utils';
-import type { ZVisionNode as NodeType, ZVisionEdge as EdgeType } from '@/lib/zvision/types';
+import type { ZVisionNode as NodeType, ZVisionEdge as EdgeType, CapabilityPatch } from '@/lib/zvision/types';
 import { ZVisionNode } from './node';
 import { components as componentDefs } from '@/lib/zvision/initial-data';
 
 interface GraphCanvasProps extends React.HTMLAttributes<HTMLDivElement> {
   nodes: NodeType[];
   edges: EdgeType[];
+  patches: CapabilityPatch[];
   onNodeClick: (id: string) => void;
+  onEdgeClick: (id: string) => void;
   onCanvasClick: () => void;
   updateNodePosition: (id: string, pos: { x: number, y: number }) => void;
   onDrop: (event: DragEvent) => void;
-  selectedNodeId: string | null;
+  onNodeLongPress: (id: string) => void;
+  selectedItemId: string | null;
+  selectedItemType: 'node' | 'edge' | null;
 }
 
 const NODE_WIDTH = 200;
@@ -58,18 +62,22 @@ const getPortOffset = (node: NodeType, handle: string): { x: number, y: number }
 
 
 export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
-  ({ nodes, edges, onNodeClick, onCanvasClick, updateNodePosition, onDrop, selectedNodeId, className, ...props }, ref) => {
+  ({ nodes, edges, patches, onNodeClick, onEdgeClick, onCanvasClick, updateNodePosition, onDrop, onNodeLongPress, selectedItemId, selectedItemType, className, ...props }, ref) => {
     
     const onDragOver = (event: DragEvent) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
     };
+    
+    const getAppliedPatchesForNode = (nodeId: string) => {
+        return patches.filter(p => p.nodeId === nodeId && p.status === 'applied');
+    }
 
     return (
       <div
         ref={ref}
         className={cn("relative flex-1 bg-background", className)}
-        onClick={onCanvasClick}
+        onClick={(e) => { e.stopPropagation(); onCanvasClick(); }}
         onDrop={onDrop}
         onDragOver={onDragOver}
         {...props}
@@ -80,9 +88,11 @@ export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
           <ZVisionNode
             key={node.id}
             node={node}
+            patches={getAppliedPatchesForNode(node.id)}
             onClick={onNodeClick}
+            onLongPress={onNodeLongPress}
             updatePosition={updateNodePosition}
-            isSelected={node.id === selectedNodeId}
+            isSelected={selectedItemType === 'node' && node.id === selectedItemId}
           />
         ))}
 
@@ -116,17 +126,23 @@ export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
             const y2 = targetNode.position.y + targetPort.y;
 
             const dx = x2 - x1;
-            const dy = y2 - y1;
-
+            
             const path = `M ${x1} ${y1} C ${x1 + dx * 0.5} ${y1}, ${x1 + dx * 0.5} ${y2}, ${x2} ${y2}`;
 
+            const isSelected = selectedItemType === 'edge' && edge.id === selectedItemId;
+
             return (
-              <g key={edge.id}>
+              <g 
+                key={edge.id}
+                onClick={(e) => { e.stopPropagation(); onEdgeClick(edge.id); }}
+                className="pointer-events-auto"
+              >
                 <path
                   d={path}
-                  stroke="hsl(var(--primary) / 0.5)"
-                  strokeWidth="2"
+                  stroke={isSelected ? "hsl(var(--ring))" : "hsl(var(--primary) / 0.5)"}
+                  strokeWidth={isSelected ? "3" : "2"}
                   fill="none"
+                  markerEnd="url(#arrow)"
                 />
                 <path
                   d={path}

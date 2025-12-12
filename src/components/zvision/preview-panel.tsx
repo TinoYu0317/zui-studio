@@ -1,12 +1,16 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Terminal, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Terminal } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import type { ZVisionEdge } from '@/lib/zvision/types';
 
-export function PreviewPanel() {
+interface PreviewPanelProps {
+    edges: ZVisionEdge[];
+    selection: { id: string | null; type: 'node' | 'edge' | null };
+}
+
+export function PreviewPanel({ edges, selection }: PreviewPanelProps) {
   const [height, setHeight] = useState(256);
   const isResizing = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -37,6 +41,8 @@ export function PreviewPanel() {
     };
   }, [resize, stopResizing]);
 
+  const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : null;
+
   return (
     <div
       ref={panelRef}
@@ -59,6 +65,12 @@ export function PreviewPanel() {
           <code>&gt; Node 'InputDoor' (1) sent: "Show me my notes for today"</code><br/>
           <code>&gt; Node 'Router' (2) received data. Routing to 'toNotes'.</code><br/>
           <code>&gt; Node 'NotesFrame' (3) received binding update...</code><br/>
+          {selectedEdge && (
+            <>
+                <code className="text-foreground">&gt; Selected Edge '{selectedEdge.id}' mapping:</code><br/>
+                <code className="text-foreground">{JSON.stringify(selectedEdge.mapping || {}, null, 2)}</code><br/>
+            </>
+          )}
           <code className="text-foreground">&gt; Simulating results... Please wait.</code>
         </pre>
       </ScrollArea>
