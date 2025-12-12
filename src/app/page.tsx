@@ -9,6 +9,7 @@ import { InspectorPanel } from '@/components/zvision/inspector-panel';
 import { AppHeader } from '@/components/zvision/header';
 import { ComponentVibeChat } from '@/components/zvision/component-vibe-chat';
 import { PreviewPanel } from '@/components/zvision/preview-panel';
+import { RenderRuntime } from '@/components/zvision/render-runtime';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent, CapabilityPatch } from '@/lib/zvision/types';
 
@@ -26,6 +27,7 @@ export default function ZVisionStudioPage() {
   const [selection, setSelection] = useState<Selection>({ id: '1', type: 'node' });
   const [isPanelVisible, setIsPanelVisible] = useState(true);
   const [mode, setMode] = useState<ViewMode>('designer');
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   const [chatNode, setChatNode] = useState<ZVisionNode | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -121,7 +123,6 @@ export default function ZVisionStudioPage() {
   const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
   const chatComponent = chatNode ? componentDefs.find(c => c.type === chatNode.type) : null;
-  const nodePatches = (nodeId: string) => patches.filter(p => p.nodeId === nodeId && p.status === 'applied');
 
   return (
     <div className="flex flex-col h-screen bg-muted/40 text-foreground">
@@ -129,6 +130,8 @@ export default function ZVisionStudioPage() {
         mode={mode}
         onModeChange={setMode}
         onTogglePreview={() => setIsPanelVisible(!isPanelVisible)}
+        isPreviewing={isPreviewing}
+        onToggleIsPreviewing={() => setIsPreviewing(!isPreviewing)}
       />
       <div className="flex flex-1 overflow-hidden">
         {mode === 'developer' && <ComponentLibrary components={componentDefs} />}
@@ -151,7 +154,7 @@ export default function ZVisionStudioPage() {
               selectedItemType={selection.type}
             />
           )}
-          {mode === 'designer' && (
+          {mode === 'designer' && !isPreviewing && (
             <DesignerCanvas
               nodes={nodes}
               onNodeSelect={handleSelectNode}
@@ -160,6 +163,9 @@ export default function ZVisionStudioPage() {
               onNodeLongPress={handleNodeLongPress}
               selectedNodeId={selection.id}
             />
+          )}
+           {mode === 'designer' && isPreviewing && (
+            <RenderRuntime nodes={nodes} />
           )}
 
           {isPanelVisible && mode === 'developer' && <PreviewPanel edges={edges} selection={selection} />}

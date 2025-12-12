@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
 
 type ViewMode = 'designer' | 'developer';
 
@@ -12,9 +13,11 @@ type AppHeaderProps = {
   mode: ViewMode;
   onModeChange: (mode: ViewMode) => void;
   onTogglePreview: () => void;
+  isPreviewing: boolean;
+  onToggleIsPreviewing: () => void;
 };
 
-export function AppHeader({ mode, onModeChange, onTogglePreview }: AppHeaderProps) {
+export function AppHeader({ mode, onModeChange, onTogglePreview, isPreviewing, onToggleIsPreviewing }: AppHeaderProps) {
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
   return (
@@ -43,9 +46,9 @@ export function AppHeader({ mode, onModeChange, onTogglePreview }: AppHeaderProp
             <PanelBottom className="h-5 w-5" />
           </Button>
         }
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={onToggleIsPreviewing} className={cn(isPreviewing && 'bg-accent text-accent-foreground')}>
           <Eye className="mr-2 h-4 w-4" />
-          Preview
+          {isPreviewing ? 'Editing' : 'Preview'}
         </Button>
         <Avatar className="h-9 w-9">
           {userAvatar && <Image src={userAvatar.imageUrl} alt="User Avatar" width={40} height={40} data-ai-hint={userAvatar.imageHint}/>}
