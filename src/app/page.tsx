@@ -9,28 +9,29 @@ import { AppHeader } from '@/components/zvision/header';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
 import type { ZVisionNode, ZVisionEdge, ZVisionComponent } from '@/lib/zvision/types';
 
+type Selection = {
+  id: string | null;
+  type: 'node' | 'edge' | null;
+};
+
 export default function ZVisionStudioPage() {
   const [nodes, setNodes] = useState<ZVisionNode[]>(initialNodes);
   const [edges, setEdges] = useState<ZVisionEdge[]>(initialEdges);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>('1');
-  const [selectedItemType, setSelectedItemType] = useState<'node' | 'edge' | null>('node');
+  const [selection, setSelection] = useState<Selection>({ id: '1', type: 'node' });
   const [isPanelVisible, setIsPanelVisible] = useState(true);
 
   const graphCanvasRef = useRef<HTMLDivElement>(null);
 
   const handleSelectNode = (nodeId: string) => {
-    setSelectedItemId(nodeId);
-    setSelectedItemType('node');
+    setSelection({ id: nodeId, type: 'node' });
   };
   
   const handleSelectEdge = (edgeId: string) => {
-    setSelectedItemId(edgeId);
-    setSelectedItemType('edge');
+    setSelection({ id: edgeId, type: 'edge' });
   };
   
   const handleCanvasClick = () => {
-    setSelectedItemId(null);
-    setSelectedItemType(null);
+    setSelection({ id: null, type: null });
   };
 
   const addNode = useCallback((componentType: string, position: { x: number; y: number }) => {
@@ -75,8 +76,8 @@ export default function ZVisionStudioPage() {
     );
   }, []);
 
-  const selectedNode = selectedItemType === 'node' ? nodes.find(n => n.id === selectedItemId) : undefined;
-  const selectedEdge = selectedItemType === 'edge' ? edges.find(e => e.id === selectedItemId) : undefined;
+  const selectedNode = selection.type === 'node' ? nodes.find(n => n.id === selection.id) : undefined;
+  const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
 
   return (
@@ -94,13 +95,13 @@ export default function ZVisionStudioPage() {
             onCanvasClick={handleCanvasClick}
             updateNodePosition={updateNodePosition}
             onDrop={onNodeDrop}
-            selectedItemId={selectedItemId}
-            selectedItemType={selectedItemType}
+            selectedItemId={selection.id}
+            selectedItemType={selection.type}
           />
           {isPanelVisible && <PreviewPanel />}
         </main>
         <InspectorPanel
-          key={selectedItemId}
+          key={`${selection.type}:${selection.id ?? 'none'}`}
           node={selectedNode}
           edge={selectedEdge}
           component={selectedComponent as ZVisionComponent}
