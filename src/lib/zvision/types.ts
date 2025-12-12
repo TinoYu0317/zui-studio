@@ -44,10 +44,28 @@ export interface ZVisionNode {
 }
 
 export interface ZVisionEdge {
-  id: string;
+  id:string;
   source: string;
   sourceHandle: string;
   target: string;
   targetHandle: string;
   mapping?: Record<string, any>;
+}
+
+export interface CapabilityPatch {
+  id: string;
+  nodeId: string;
+  createdAt: string;
+  summary: {
+    trigger: string;
+    action: string;
+  };
+  status: 'draft' | 'applied';
+  plan: {
+      trigger: string;
+      action: string;
+      data: string;
+      sideEffects: string;
+      filesTouched: string[];
+  }
 }

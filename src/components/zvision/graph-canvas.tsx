@@ -2,13 +2,14 @@
 
 import React, { forwardRef, DragEvent } from 'react';
 import { cn } from '@/lib/utils';
-import type { ZVisionNode as NodeType, ZVisionEdge as EdgeType } from '@/lib/zvision/types';
+import type { ZVisionNode as NodeType, ZVisionEdge as EdgeType, CapabilityPatch } from '@/lib/zvision/types';
 import { ZVisionNode } from './node';
 import { components as componentDefs } from '@/lib/zvision/initial-data';
 
 interface GraphCanvasProps extends React.HTMLAttributes<HTMLDivElement> {
   nodes: NodeType[];
   edges: EdgeType[];
+  patches: CapabilityPatch[];
   onNodeClick: (id: string) => void;
   onEdgeClick: (id: string) => void;
   onCanvasClick: () => void;
@@ -61,12 +62,16 @@ const getPortOffset = (node: NodeType, handle: string): { x: number, y: number }
 
 
 export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
-  ({ nodes, edges, onNodeClick, onEdgeClick, onCanvasClick, updateNodePosition, onDrop, onNodeLongPress, selectedItemId, selectedItemType, className, ...props }, ref) => {
+  ({ nodes, edges, patches, onNodeClick, onEdgeClick, onCanvasClick, updateNodePosition, onDrop, onNodeLongPress, selectedItemId, selectedItemType, className, ...props }, ref) => {
     
     const onDragOver = (event: DragEvent) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
     };
+    
+    const getAppliedPatchesForNode = (nodeId: string) => {
+        return patches.filter(p => p.nodeId === nodeId && p.status === 'applied');
+    }
 
     return (
       <div
@@ -83,6 +88,7 @@ export const GraphCanvas = forwardRef<HTMLDivElement, GraphCanvasProps>(
           <ZVisionNode
             key={node.id}
             node={node}
+            patches={getAppliedPatchesForNode(node.id)}
             onClick={onNodeClick}
             onLongPress={onNodeLongPress}
             updatePosition={updateNodePosition}

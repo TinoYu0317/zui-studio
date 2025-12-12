@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useRef, MouseEvent as ReactMouseEvent, useEffect } from 'react';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useRef, MouseEvent as ReactMouseEvent } from 'react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { ZVisionNode as NodeType } from '@/lib/zvision/types';
+import type { ZVisionNode as NodeType, CapabilityPatch } from '@/lib/zvision/types';
 import { components as componentDefs } from '@/lib/zvision/initial-data';
 import { Separator } from '../ui/separator';
+import { Badge } from '../ui/badge';
+import { ArrowRight } from 'lucide-react';
 
 interface ZVisionNodeProps {
   node: NodeType;
+  patches: CapabilityPatch[];
   onClick: (id: string) => void;
   onLongPress: (id: string) => void;
   updatePosition: (id: string, pos: { x: number, y: number }) => void;
@@ -23,7 +26,7 @@ const Port = ({ type, name }: { type: 'in' | 'out', name: string }) => (
   </div>
 );
 
-export function ZVisionNode({ node, onClick, onLongPress, updatePosition, isSelected }: ZVisionNodeProps) {
+export function ZVisionNode({ node, patches, onClick, onLongPress, updatePosition, isSelected }: ZVisionNodeProps) {
   const dragRef = useRef({ dx: 0, dy: 0 });
   const longPressTimeout = useRef<NodeJS.Timeout>();
   const component = componentDefs.find(c => c.type === node.type);
@@ -71,30 +74,48 @@ export function ZVisionNode({ node, onClick, onLongPress, updatePosition, isSele
   const outputs = component.events || [];
 
   return (
-    <Card
+    <div
       className={cn(
-        "absolute w-[200px] shadow-lg hover:shadow-xl transition-all duration-200 border-2 select-none",
-        isSelected ? "border-primary shadow-primary/20" : "border-transparent"
+        "absolute w-[200px] shadow-lg hover:shadow-xl transition-all duration-200 select-none",
+        isSelected ? "z-10" : ""
       )}
       style={{ left: node.position.x, top: node.position.y }}
       onMouseDown={handleMouseDown}
       onClick={(e) => e.stopPropagation()}
     >
-      <CardHeader className="p-3 cursor-grab">
-        <div className="flex items-center gap-2">
-          <component.icon className="h-5 w-5 text-primary" />
-          <CardTitle className="text-base truncate">{component.name}</CardTitle>
+      <Card
+        className={cn(
+            "border-2",
+            isSelected ? "border-primary shadow-primary/20" : "border-transparent"
+        )}
+      >
+        <CardHeader className="p-3 cursor-grab">
+            <div className="flex items-center gap-2">
+            <component.icon className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base truncate">{component.name}</CardTitle>
+            </div>
+        </CardHeader>
+        <Separator />
+        <div className="p-2 grid grid-cols-2 gap-2 group">
+            <div className="flex flex-col gap-1 text-left">
+            {inputs.map(input => <Port key={input.name} type="in" name={input.name} />)}
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+            {outputs.map(output => <Port key={output.name} type="out" name={output.name} />)}
+            </div>
         </div>
-      </CardHeader>
-      <Separator />
-      <div className="p-2 grid grid-cols-2 gap-2 group">
-        <div className="flex flex-col gap-1 text-left">
-           {inputs.map(input => <Port key={input.name} type="in" name={input.name} />)}
+      </Card>
+      {patches.length > 0 && (
+        <div className="mt-1 flex flex-col items-center gap-1">
+            {patches.map(patch => (
+                <Badge key={patch.id} variant="secondary" className="flex items-center gap-1.5 text-xs font-normal">
+                    <span>{patch.summary.trigger}</span>
+                    <ArrowRight className="h-3 w-3" />
+                    <span>{patch.summary.action}</span>
+                </Badge>
+            ))}
         </div>
-        <div className="flex flex-col gap-1 text-right">
-          {outputs.map(output => <Port key={output.name} type="out" name={output.name} />)}
-        </div>
-      </div>
-    </Card>
+      )}
+    </div>
   );
 }

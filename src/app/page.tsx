@@ -8,7 +8,7 @@ import { PreviewPanel } from '@/components/zvision/preview-panel';
 import { AppHeader } from '@/components/zvision/header';
 import { ComponentVibeChat } from '@/components/zvision/component-vibe-chat';
 import { initialNodes, initialEdges, components as componentDefs } from '@/lib/zvision/initial-data';
-import type { ZVisionNode, ZVisionEdge, ZVisionComponent } from '@/lib/zvision/types';
+import type { ZVisionNode, ZVisionEdge, ZVisionComponent, CapabilityPatch } from '@/lib/zvision/types';
 
 type Selection = {
   id: string | null;
@@ -18,6 +18,7 @@ type Selection = {
 export default function ZVisionStudioPage() {
   const [nodes, setNodes] = useState<ZVisionNode[]>(initialNodes);
   const [edges, setEdges] = useState<ZVisionEdge[]>(initialEdges);
+  const [patches, setPatches] = useState<CapabilityPatch[]>([]);
   const [selection, setSelection] = useState<Selection>({ id: '1', type: 'node' });
   const [isPanelVisible, setIsPanelVisible] = useState(true);
 
@@ -96,10 +97,25 @@ export default function ZVisionStudioPage() {
     );
   }, []);
 
+  const handleApplyPatch = (patch: CapabilityPatch) => {
+    setPatches(prevPatches => {
+      // Remove previous applied patches for the same node
+      const otherPatches = prevPatches.filter(p => p.nodeId !== patch.nodeId || p.status !== 'applied');
+      return [...otherPatches, { ...patch, status: 'applied' }];
+    });
+    setIsChatOpen(false);
+  };
+  
+  const handleDiscardPatch = (patchId: string) => {
+    setPatches(prevPatches => prevPatches.filter(p => p.id !== patchId));
+  };
+
+
   const selectedNode = selection.type === 'node' ? nodes.find(n => n.id === selection.id) : undefined;
   const selectedEdge = selection.type === 'edge' ? edges.find(e => e.id === selection.id) : undefined;
   const selectedComponent = selectedNode ? componentDefs.find(c => c.type === selectedNode.type) : null;
   const chatComponent = chatNode ? componentDefs.find(c => c.type === chatNode.type) : null;
+  const nodePatches = (nodeId: string) => patches.filter(p => p.nodeId === nodeId && p.status === 'applied');
 
   return (
     <div className="flex flex-col h-screen bg-muted/40 text-foreground">
@@ -111,6 +127,7 @@ export default function ZVisionStudioPage() {
             ref={graphCanvasRef}
             nodes={nodes}
             edges={edges}
+            patches={patches}
             onNodeClick={handleSelectNode}
             onEdgeClick={handleSelectEdge}
             onCanvasClick={handleCanvasClick}
@@ -136,6 +153,8 @@ export default function ZVisionStudioPage() {
           onOpenChange={setIsChatOpen}
           node={chatNode}
           component={chatComponent}
+          onApplyPatch={handleApplyPatch}
+          onDiscardPatch={handleDiscardPatch}
         />
       )}
     </div>
